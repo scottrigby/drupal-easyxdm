@@ -1,0 +1,3 @@
+name = easyxdm 
+description = easyXDM provider and consumer for Drupal
+core = 7.x

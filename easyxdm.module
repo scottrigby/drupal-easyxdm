@@ -1,0 +1,95 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function easyxdm_menu() {
+  $items = array();
+
+  // @todo Improve this.
+  $items['easyxdm-test-page'] = array(
+    'title' => 'EasyXDM Test Page',
+    'page callback' => 'easyxdm_test_page',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_library().
+ */
+function easyxdm_library() {
+  $libraries = array();
+
+  $libraries['easyxdm'] = array(
+    'title' => 'EasyXDM',
+    'website' => 'http://easyxdm.net/',
+    'version' => '2.4.20.7',
+    'js' => array(
+      drupal_get_path('module', 'easyxdm') . '/js/easyXDM.min.js' => array(),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * JS to initialize EasyXDM with the capacity to send and receive messages.
+ *
+ * Note define the JS string here, rather than a traditional JS file, so that we
+ * can easily include dynamic values.
+ *
+ * @return string
+ *   EasyXDM consumer JS, with dynamic variables.
+ */
+function easyxdm_script_init() {
+  //////////////////////////////////////////////////////////////
+  /// USE HTTPS WHEN SENDING SENSITIVE DATA!
+  //////////////////////////////////////////////////////////////
+  // @todo Make this variable.
+  $provider_remote = 'http://d7-provider.local';
+  $js = <<<EOT
+    (function (Drupal) {
+      'use strict';
+
+      Drupal.easyXDM = Drupal.easyXDM || {};
+
+      // Check whether logged in on other domain.
+      if (easyXDM && easyXDM.constructor === Object) {
+        var socket = new easyXDM.Socket({
+          remote: '$provider_remote',
+          onMessage: function (message) {
+            // Write the received message to the global Drupal object to be used elsewhere on the site
+            drupalEasyXDM.messageConsumed = message;
+/*
+          },
+          onReady: function () {
+            socket.postMessage('');
+*/
+          }
+        });
+      }
+console.info('easyxdm_script_init');
+console.info(Drupal.easyXDM);
+    })(Drupal);
+EOT;
+
+  return $js;
+}
+
+function easyxdm_test_page() {
+  drupal_add_library('easyxdm', 'easyxdm');
+  drupal_add_js(easyxdm_script_init(), array('type' => 'inline'));
+
+  $output = <<<EOT
+    <script>
+      (function ($) {
+console.info(Object.keys(Drupal));
+console.info(Drupal.easyXDM);
+      })(jQuery);
+    </script>
+EOT;
+
+  return theme('table', array('header'=>array('$header'), 'rows'=>array(array($output))));
+}
