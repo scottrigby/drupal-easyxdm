@@ -5,10 +5,16 @@
 function easyxdm_menu() {
   $items = array();
 
-  // @todo Improve this.
+  $items['easyxdm-provider-script'] = array(
+    'title' => 'Page reserved for firing EasyXDM provider script',
+    'page callback' => 'easyxdm_render_provider_script_only',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+
   $items['easyxdm-test-page'] = array(
     'title' => 'EasyXDM Test Page',
-    'page callback' => 'easyxdm_test_page',
+    'page callback' => 'easyxdm_render_test_page',
     'type' => MENU_CALLBACK,
     'access callback' => TRUE,
   );
@@ -45,10 +51,19 @@ function easyxdm_library() {
  */
 function easyxdm_script_init() {
   //////////////////////////////////////////////////////////////
-  /// USE HTTPS WHEN SENDING SENSITIVE DATA!
+  /// USE HTTPS WHEN TRANSMITTING SENSITIVE DATA!
   //////////////////////////////////////////////////////////////
-  // @todo Make this variable.
-  $provider_remote = 'http://d7-provider.local';
+  $provider_url = variable_get('easyxdm_provider_url', '');
+  // $consumer_exec is stringified JavaScript to be rendered as HTML and then
+  // executed when the HTML is processed by the browser. Extreme care must be
+  // taken that only trusted developers submit the code which will be executed!
+  $consumer_exec = variable_get('easyxdm_consumer_exec', '');
+
+  // @todo Remove these after development.
+  $provider_url = 'http://d7-provider.local/easyxdm-provider-script';
+  $consumer_exec = 'console.info("EasyXDM receipt success!");';
+
+  // Back our regularly scheduled program. @todo Remove this comment after development.
   $js = <<<EOT
     (function (Drupal) {
       'use strict';
@@ -58,15 +73,15 @@ function easyxdm_script_init() {
       // Check whether logged in on other domain.
       if (easyXDM && easyXDM.constructor === Object) {
         var socket = new easyXDM.Socket({
-          remote: '$provider_remote',
+          remote: '$provider_url',
           onMessage: function (message) {
-            // Write the received message to the global Drupal object to be used elsewhere on the site
-            drupalEasyXDM.messageConsumed = message;
-/*
+            // Write the received message to the global Drupal object to be
+            // accessed from JavaScripts in custom themes and modules.
+            Drupal.easyXDM.inbox = message;
+            $consumer_exec
           },
           onReady: function () {
-            socket.postMessage('');
-*/
+            socket.postMessage('EasyXDM post success!');
           }
         });
       }
@@ -78,7 +93,14 @@ EOT;
   return $js;
 }
 
-function easyxdm_test_page() {
+function easyxdm_render_provider_script_only() {
+  drupal_add_library('easyxdm', 'easyxdm');
+  drupal_add_js(easyxdm_script_init(), array('type' => 'inline'));
+
+  return '';
+}
+
+function easyxdm_render_test_page() {
   drupal_add_library('easyxdm', 'easyxdm');
   drupal_add_js(easyxdm_script_init(), array('type' => 'inline'));
 
