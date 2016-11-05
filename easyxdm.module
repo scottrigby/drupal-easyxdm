@@ -12,6 +12,13 @@ function easyxdm_menu() {
     'access callback' => TRUE,
   );
 
+  $items['easyxdm-provider-script-test'] = array(
+    'title' => 'Fires EasyXDM provider script for EasyXDM Test Page',
+    'page callback' => 'easyxdm_render_provider_script_only_test',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+
   $items['easyxdm-test-page'] = array(
     'title' => 'EasyXDM Test Page',
     'page callback' => 'easyxdm_render_test_page',
@@ -49,23 +56,26 @@ function easyxdm_library() {
  * @return string
  *   EasyXDM consumer JS, with dynamic variables.
  */
-function easyxdm_script_init() {
+function easyxdm_script_exec($remote_url = NULL, $init_msg = NULL, $on_msg_exec = NULL, $test = FALSE) {
   //////////////////////////////////////////////////////////////
   /// USE HTTPS WHEN TRANSMITTING SENSITIVE DATA!
   //////////////////////////////////////////////////////////////
-  $provider_url = variable_get('easyxdm_provider_url', '');
-  // $consumer_exec is stringified JavaScript to be rendered as HTML and then
+  if (!isset($remote_url)) {
+    $remote_url = variable_get('easyxdm_remote_url', '');
+  }
+  if (!isset($init_msg)) {
+    $init_msg = variable_get('easyxdm_init_msg', '');
+  }
+  // $on_msg_exec is stringified JavaScript to be rendered as HTML and then
   // executed when the HTML is processed by the browser. Extreme care must be
   // taken that only trusted developers submit the code which will be executed!
-  $consumer_exec = variable_get('easyxdm_consumer_exec', '');
+  if (!isset($on_msg_exec)) {
+    $on_msg_exec = variable_get('easyxdm_on_msg_exec', '');
+  }
 
-  // @todo Remove these after development.
-  $provider_url = 'http://d7-provider.local/easyxdm-provider-script';
-  $consumer_exec = 'console.info("EasyXDM receipt success!");';
-
-  // Back our regularly scheduled program. @todo Remove this comment after development.
+  $init_msg = addslashes($init_msg);
   $js = <<<EOT
-    (function (Drupal) {
+    (function (Drupal, $) {
       'use strict';
 
       Drupal.easyXDM = Drupal.easyXDM || {};
@@ -73,45 +83,65 @@ function easyxdm_script_init() {
       // Check whether logged in on other domain.
       if (easyXDM && easyXDM.constructor === Object) {
         var socket = new easyXDM.Socket({
-          remote: '$provider_url',
-          onMessage: function (message) {
+          remote: '$remote_url',
+          onMessage: function (message, origin) {
             // Write the received message to the global Drupal object to be
             // accessed from JavaScripts in custom themes and modules.
             Drupal.easyXDM.inbox = message;
-            $consumer_exec
+            $on_msg_exec
           },
           onReady: function () {
-            socket.postMessage('EasyXDM post success!');
+            if ('$init_msg' !== '') { 
+              socket.postMessage('$init_msg');
+            }
           }
         });
       }
-console.info('easyxdm_script_init');
-console.info(Drupal.easyXDM);
-    })(Drupal);
+    })(Drupal, jQuery);
 EOT;
 
   return $js;
 }
 
 function easyxdm_render_provider_script_only() {
+  global $base_url;
+
   drupal_add_library('easyxdm', 'easyxdm');
-  drupal_add_js(easyxdm_script_init(), array('type' => 'inline'));
+  drupal_add_js(easyxdm_script_exec(), array('type' => 'inline'));
+
+  return '';
+}
+
+function easyxdm_render_provider_script_only_test() {
+  global $base_url;
+
+  drupal_add_library('easyxdm', 'easyxdm');
+  $on_msg_exec = <<<EOT
+    if (message.indexOf("Sending consumer message from ") === 0) {
+      socket.postMessage("Responding with provider message from $base_url");
+    }
+EOT;
+  drupal_add_js(easyxdm_script_exec(NULL, NULL, $on_msg_exec), array('type' => 'inline'));
 
   return '';
 }
 
 function easyxdm_render_test_page() {
+  global $base_url;
+  global $conf;
+
   drupal_add_library('easyxdm', 'easyxdm');
-  drupal_add_js(easyxdm_script_init(), array('type' => 'inline'));
+  // @todo Make these generic after development.
+  $remote_url = 'http://d7-provider.local/easyxdm-provider-script-test';
+  $init_msg = 'Sending consumer message from ' . $base_url;
+  $on_msg_exec = '$("#block-system-main > .content > table > tbody > tr > td:last-child").text(message);';
+  drupal_add_js(easyxdm_script_exec($remote_url, $init_msg, $on_msg_exec), array('type' => 'inline'));
 
-  $output = <<<EOT
-    <script>
-      (function ($) {
-console.info(Object.keys(Drupal));
-console.info(Drupal.easyXDM);
-      })(jQuery);
-    </script>
-EOT;
+  $output = '<h4>X-Frame-Options must be set correctly in order for EasyXDM to communicate across domains.</h4>';
+  $output .= '<h4>$conf[\'x_frame_options\']: ';
+  $output .= !empty($conf['x_frame_options']) ? $conf['x_frame_options'] : '';
+  $output .= '</h4>';
+  $output .= theme('table', array('header'=>array('Message sent', 'Message received'), 'rows'=>array(array($init_msg, ''))));
 
-  return theme('table', array('header'=>array('$header'), 'rows'=>array(array($output))));
+  return $output;
 }
