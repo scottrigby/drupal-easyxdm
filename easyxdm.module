@@ -8,14 +8,14 @@ function easyxdm_menu() {
 
   if ($is_provider) {
     $items['easyxdm-provider-script'] = array(
-      'title' => 'Page reserved for firing EasyXDM provider script',
+      'title' => 'Page reserved for firing easyXDM provider script',
       'page callback' => 'easyxdm_render_provider_script_only',
       'type' => MENU_CALLBACK,
       'access callback' => TRUE,
     );
 
     $items['easyxdm-provider-script-test'] = array(
-      'title' => 'Fires EasyXDM provider script for EasyXDM Test Page',
+      'title' => 'Fires easyXDM provider script for easyXDM Test Page',
       'page callback' => 'easyxdm_render_provider_script_only_test',
       'type' => MENU_CALLBACK,
       'access callback' => TRUE,
@@ -23,7 +23,7 @@ function easyxdm_menu() {
   }
 
   $items['easyxdm-test-page'] = array(
-    'title' => 'EasyXDM Test Page',
+    'title' => 'easyXDM Test Page',
     'page callback' => 'easyxdm_render_test_page',
     'type' => MENU_CALLBACK,
     'access callback' => TRUE,
@@ -39,7 +39,7 @@ function easyxdm_library() {
   $libraries = array();
 
   $libraries['easyxdm'] = array(
-    'title' => 'EasyXDM',
+    'title' => 'easyXDM',
     'website' => 'http://easyxdm.net/',
     'version' => '2.4.20.7',
     'js' => array(
@@ -51,13 +51,13 @@ function easyxdm_library() {
 }
 
 /**
- * JS to initialize EasyXDM with the capacity to send and receive messages.
+ * JS to initialize easyXDM with the capacity to send and receive messages.
  *
  * Note define the JS string here, rather than a traditional JS file, so that we
  * can easily include dynamic values.
  *
  * @return string
- *   EasyXDM consumer JS, with dynamic variables.
+ *   easyXDM consumer JS, with dynamic variables.
  */
 function easyxdm_script_exec($remote_url = NULL, $init_msg = NULL, $on_msg_exec = NULL, $test = FALSE) {
   //////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ function easyxdm_render_test_page() {
 
   drupal_add_js(easyxdm_script_exec($remote_url, $consumer_msg, $on_msg_exec), array('type' => 'inline'));
 
-  $output = '<h4>X-Frame-Options must be set correctly in order for EasyXDM providers to communicate across domains.</h4>';
+  $output = '<h4>X-Frame-Options must be set correctly in order for easyXDM providers to communicate across domains.</h4>';
   $output .= '<h4>$conf[\'x_frame_options\']: ';
   $output .= !empty($conf['x_frame_options']) ? $conf['x_frame_options'] : '';
   $output .= '</h4>';
@@ -155,7 +155,7 @@ function easyxdm_render_test_page() {
   $output .= '</h4>';
 
   $remote_url = variable_get('easyxdm_remote_url', '');
-  $output .= '<h4>easyxdm_remote_url must point to a valid EasyXDM provider page on consumers.</h4>';
+  $output .= '<h4>easyxdm_remote_url must point to a valid easyXDM provider page on consumers.</h4>';
   $output .= '<h4>DB var easyxdm_remote_url: ';
   $output .= $remote_url;
   $output .= '</h4>';
