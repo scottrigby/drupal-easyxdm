@@ -8,14 +8,14 @@ function easyxdm_menu() {
 
   if ($is_provider) {
     $items['easyxdm-provider-script'] = array(
-      'title' => 'Page reserved for firing easyXDM provider script',
+      'title' => 'Page reserved for firing easyXDM Provider script',
       'page callback' => 'easyxdm_render_provider_script_only',
       'type' => MENU_CALLBACK,
       'access callback' => TRUE,
     );
 
     $items['easyxdm-provider-script-test'] = array(
-      'title' => 'Fires easyXDM provider script for easyXDM Test Page',
+      'title' => 'Fires easyXDM Provider script for easyXDM Test Page',
       'page callback' => 'easyxdm_render_provider_script_only_test',
       'type' => MENU_CALLBACK,
       'access callback' => TRUE,
@@ -57,7 +57,7 @@ function easyxdm_library() {
  * can easily include dynamic values.
  *
  * @return string
- *   easyXDM consumer JS, with dynamic variables.
+ *   easyXDM Consumer JS, with dynamic variables.
  */
 function easyxdm_script_exec($remote_url = NULL, $init_msg = NULL, $on_msg_exec = NULL, $test = FALSE) {
   //////////////////////////////////////////////////////////////
@@ -121,8 +121,8 @@ function easyxdm_render_provider_script_only_test() {
   drupal_add_library('easyxdm', 'easyxdm');
 
   $on_msg_exec = <<<EOT
-    if (message.indexOf("Sending consumer message from ") === 0) {
-      socket.postMessage("Responding with provider message from $base_url");
+    if (message.indexOf("Sending Consumer message from ") === 0) {
+      socket.postMessage("Responding with Provider message from $base_url");
     }
 EOT;
 
@@ -138,36 +138,41 @@ function easyxdm_render_test_page() {
   drupal_add_library('easyxdm', 'easyxdm');
 
   $remote_url = NULL;
-  $consumer_msg = 'Sending consumer message from ' . $base_url;
+  $consumer_msg = 'Sending Consumer message from ' . $base_url;
   $on_msg_exec = '$("#block-system-main > .content > table > tbody > tr > td:last-child").text(message);';
 
   drupal_add_js(easyxdm_script_exec($remote_url, $consumer_msg, $on_msg_exec), array('type' => 'inline'));
 
-  $output = '<h4>X-Frame-Options must be set correctly in order for easyXDM providers to communicate across domains.</h4>';
-  $output .= '<h4>$conf[\'x_frame_options\']: ';
+  $output = '<h4>X-Frame-Options must be set correctly in order for easyXDM Providers to communicate across domains.</h4>';
+  $output .= '<blockquote>$conf[\'x_frame_options\']: ';
   $output .= !empty($conf['x_frame_options']) ? $conf['x_frame_options'] : '';
-  $output .= '</h4>';
+  $output .= '</blockquote>';
 
   $is_provider = variable_get('easyxdm_provide', FALSE);
-  $output .= '<h4>easyxdm_provide must be TRUE on providers.</h4>';
-  $output .= '<h4>DB var easyxdm_provide: ';
+  $output .= '<h4>easyxdm_provide must be TRUE on Providers.</h4>';
+  $output .= '<blockquote>DB var easyxdm_provide: ';
   $output .= $is_provider ? 'TRUE' : 'FALSE';
-  $output .= '</h4>';
+  $output .= '</blockquote>';
 
   $remote_url = variable_get('easyxdm_remote_url', '');
-  $output .= '<h4>easyxdm_remote_url must point to a valid easyXDM provider page on consumers.</h4>';
-  $output .= '<h4>DB var easyxdm_remote_url: ';
+  $output .= '<h4>easyxdm_remote_url must point to a valid easyXDM Provider page on Consumers.</h4>';
+  $output .= '<blockquote>DB var easyxdm_remote_url: ';
   $output .= $remote_url;
-  $output .= '</h4>';
+  $output .= '</blockquote>';
 
   $init_msg = variable_get('easyxdm_init_msg', '');
-  $output .= '<h4>DB var easyxdm_init_msg: ';
+  $output .= '<h4>easyxdm_init_msg is configurable in the DB for convenience.<br>';
+  $output .= 'It can also be passed as a param when Consumers call easyxdm_script_exec</h4>';
+  $output .= '<blockquote>DB var easyxdm_init_msg: ';
   $output .= $init_msg;
-  $output .= '</h4>';
+  $output .= '</blockquote>';
 
   $on_msg_exec = variable_get('easyxdm_on_msg_exec', '');
-  $output .= '<h4>DB var easyxdm_on_msg_exec:</h4>';
-  $output .= '<h4>' . $on_msg_exec . '</h4>';
+  $output .= '<h4>easyxdm_on_msg_exec is necessary on Providers. It must be stringified JavaScript and can key off of<br>';
+  $output .= 'the easyxdm_init_msg sent from the Consumer.</h4>';
+  $output .= '<blockquote>DB var easyxdm_on_msg_exec: ';
+  $output .= $on_msg_exec;
+  $output .= '</blockquote>';
 
   $output .= theme('table', array('header'=>array('Message sent', 'Message received'), 'rows'=>array(array($consumer_msg, ''))));
 
