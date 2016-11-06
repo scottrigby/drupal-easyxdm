@@ -149,13 +149,13 @@ function easyxdm_render_test_page() {
   $output .= '</h4>';
 
   $is_provider = variable_get('easyxdm_provide', FALSE);
-  $output .= '<h4>easy_provide must be TRUE on providers.</h4>';
+  $output .= '<h4>easyxdm_provide must be TRUE on providers.</h4>';
   $output .= '<h4>DB var easyxdm_provide: ';
   $output .= $is_provider ? 'TRUE' : 'FALSE';
   $output .= '</h4>';
 
   $remote_url = variable_get('easyxdm_remote_url', '');
-  $output .= '<h4>easy_remote_url must point to a valid EasyXDM provider page on consumers.</h4>';
+  $output .= '<h4>easyxdm_remote_url must point to a valid EasyXDM provider page on consumers.</h4>';
   $output .= '<h4>DB var easyxdm_remote_url: ';
   $output .= $remote_url;
   $output .= '</h4>';
