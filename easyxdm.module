@@ -161,8 +161,8 @@ function easyxdm_render_test_page() {
   $output .= '</blockquote>';
 
   $init_msg = variable_get('easyxdm_init_msg', '');
-  $output .= '<h4>easyxdm_init_msg is configurable in the DB for convenience.<br>';
-  $output .= 'It can also be passed as a param when Consumers call easyxdm_script_exec</h4>';
+  $output .= '<h4>easyxdm_init_msg is configurable in the DB for convenience. It can also be passed as a param when<br>';
+  $output .= 'Consumers call easyxdm_script_exec().</h4>';
   $output .= '<blockquote>DB var easyxdm_init_msg: ';
   $output .= $init_msg;
   $output .= '</blockquote>';
