@@ -4,20 +4,23 @@
  */
 function easyxdm_menu() {
   $items = array();
+  $is_provider = variable_get('easyxdm_provide', FALSE);
 
-  $items['easyxdm-provider-script'] = array(
-    'title' => 'Page reserved for firing EasyXDM provider script',
-    'page callback' => 'easyxdm_render_provider_script_only',
-    'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
-  );
+  if ($is_provider) {
+    $items['easyxdm-provider-script'] = array(
+      'title' => 'Page reserved for firing EasyXDM provider script',
+      'page callback' => 'easyxdm_render_provider_script_only',
+      'type' => MENU_CALLBACK,
+      'access callback' => TRUE,
+    );
 
-  $items['easyxdm-provider-script-test'] = array(
-    'title' => 'Fires EasyXDM provider script for EasyXDM Test Page',
-    'page callback' => 'easyxdm_render_provider_script_only_test',
-    'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
-  );
+    $items['easyxdm-provider-script-test'] = array(
+      'title' => 'Fires EasyXDM provider script for EasyXDM Test Page',
+      'page callback' => 'easyxdm_render_provider_script_only_test',
+      'type' => MENU_CALLBACK,
+      'access callback' => TRUE,
+    );
+  }
 
   $items['easyxdm-test-page'] = array(
     'title' => 'EasyXDM Test Page',
@@ -116,11 +119,13 @@ function easyxdm_render_provider_script_only_test() {
   global $base_url;
 
   drupal_add_library('easyxdm', 'easyxdm');
+
   $on_msg_exec = <<<EOT
     if (message.indexOf("Sending consumer message from ") === 0) {
       socket.postMessage("Responding with provider message from $base_url");
     }
 EOT;
+
   drupal_add_js(easyxdm_script_exec(NULL, NULL, $on_msg_exec), array('type' => 'inline'));
 
   return '';
@@ -131,17 +136,40 @@ function easyxdm_render_test_page() {
   global $conf;
 
   drupal_add_library('easyxdm', 'easyxdm');
-  // @todo Make these generic after development.
-  $remote_url = 'http://d7-provider.local/easyxdm-provider-script-test';
-  $init_msg = 'Sending consumer message from ' . $base_url;
-  $on_msg_exec = '$("#block-system-main > .content > table > tbody > tr > td:last-child").text(message);';
-  drupal_add_js(easyxdm_script_exec($remote_url, $init_msg, $on_msg_exec), array('type' => 'inline'));
 
-  $output = '<h4>X-Frame-Options must be set correctly in order for EasyXDM to communicate across domains.</h4>';
+  $remote_url = NULL;
+  $consumer_msg = 'Sending consumer message from ' . $base_url;
+  $on_msg_exec = '$("#block-system-main > .content > table > tbody > tr > td:last-child").text(message);';
+
+  drupal_add_js(easyxdm_script_exec($remote_url, $consumer_msg, $on_msg_exec), array('type' => 'inline'));
+
+  $output = '<h4>X-Frame-Options must be set correctly in order for EasyXDM providers to communicate across domains.</h4>';
   $output .= '<h4>$conf[\'x_frame_options\']: ';
   $output .= !empty($conf['x_frame_options']) ? $conf['x_frame_options'] : '';
   $output .= '</h4>';
-  $output .= theme('table', array('header'=>array('Message sent', 'Message received'), 'rows'=>array(array($init_msg, ''))));
+
+  $is_provider = variable_get('easyxdm_provide', FALSE);
+  $output .= '<h4>easy_provide must be TRUE on providers.</h4>';
+  $output .= '<h4>DB var easyxdm_provide: ';
+  $output .= $is_provider ? 'TRUE' : 'FALSE';
+  $output .= '</h4>';
+
+  $remote_url = variable_get('easyxdm_remote_url', '');
+  $output .= '<h4>easy_remote_url must point to a valid EasyXDM provider page on consumers.</h4>';
+  $output .= '<h4>DB var easyxdm_remote_url: ';
+  $output .= $remote_url;
+  $output .= '</h4>';
+
+  $init_msg = variable_get('easyxdm_init_msg', '');
+  $output .= '<h4>DB var easyxdm_init_msg: ';
+  $output .= $init_msg;
+  $output .= '</h4>';
+
+  $on_msg_exec = variable_get('easyxdm_on_msg_exec', '');
+  $output .= '<h4>DB var easyxdm_on_msg_exec:</h4>';
+  $output .= '<h4>' . $on_msg_exec . '</h4>';
+
+  $output .= theme('table', array('header'=>array('Message sent', 'Message received'), 'rows'=>array(array($consumer_msg, ''))));
 
   return $output;
 }
